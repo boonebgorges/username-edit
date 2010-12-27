@@ -37,7 +37,7 @@ class BBG_Username_Edit {
 	 */
 	function hooks() {
 		add_action( 'edit_user_profile', array( $this, 'user_edit_render' ) );
-		add_action( 'user_profile_update_errors', array( $this, 'process_edit' ), 10, 3 );
+		add_action( 'profile_update', array( $this, 'process_edit' ), 10, 2 );
 	}
 	
 	/**
@@ -65,11 +65,11 @@ class BBG_Username_Edit {
 		<?php
 	}
 	
-	function process_edit( $errors, $update, $user ) {
-		if ( empty( $_POST['username-edit'] ) || empty( $update ) )
+	function process_edit( $user_id ) {
+		if ( empty( $_POST['username-edit'] ) )
 			return $errors;
 		
-		if ( $this->change_username( $user->ID, $_POST['username-edit'] ) )
+		if ( $this->change_username( $user_id, $_POST['username-edit'] ) )
 			return true;
 		
 		return false;		
@@ -81,18 +81,16 @@ class BBG_Username_Edit {
 		if ( empty( $user_id ) || empty( $new_username ) )
 			return false;
 		
-		// No need to include registration.php on WP 3.1+
-		if ( !function_exists( 'wp_update_user' ) )
-			include( ABSPATH . WPINC . '/registration.php' );
-		
 		$new_username = sanitize_user( $new_username, true );
 		
 		if ( username_exists( $new_username ) )
 			return new WP_Error('existing_user_login', __('This username is already registered.') );
 		
-		$sql = $wpdb->prepare( "UPDATE {$wpdb->users} SET user_login = %s, user_nicename = %s WHERE ID = %s", $new_username, $new_username, $user_id );
+		$sql = $wpdb->prepare( "UPDATE {$wpdb->users} SET user_login = %s, user_nicename = %s WHERE ID = %s;", $new_username, $new_username, $user_id );
 		$result = $wpdb->query( $sql );
 		
+		//die();
+	
 		if ( $result )
 			return true;
 
